@@ -2,10 +2,6 @@
 
 **Tools:** Apache Spark 3.3.0, PySpark, Python, Google Colab | **Domain:** Data Engineering & Music Analytics
 
-# 🎵 Spotify Big Data Analysis: Engineering & Insights with PySpark
-
-**Tools:** Apache Spark 3.3.0, PySpark, Python, Google Colab | **Domain:** Data Engineering & Music Analytics
-
 ---
 
 ## 📖 Table of Contents
