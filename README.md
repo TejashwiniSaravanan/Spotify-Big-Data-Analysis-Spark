@@ -36,29 +36,29 @@ This project executes a high-scale Exploratory Data Analysis (EDA) on the "Spoti
 df = spark.read.csv("tracks.csv", header=True, inferSchema=True)
 df.printSchema()
 
-The Why: Without a strict schema, Big Data becomes "dark data." I ensured that numeric metrics like popularity and energy were correctly typed to prevent errors during mathematical aggregations.
+**The Why:** Without a strict schema, Big Data becomes "dark data." I ensured that numeric metrics like popularity and energy were correctly typed to prevent errors during mathematical aggregations.
 
 <img src="schema_tree.png" alt="Spark Schema Tree" width="250"/>
 
 ## 🛠️ Data Engineering & Transformation
 ### 3. Dimensionality Reduction
-The What: Reducing 135 variables down to 12 core audio and metadata features.
-The Why: In Big Data Engineering, processing unnecessary columns wastes memory and compute power. By isolating only the impactful columns (id, name, artists, popularity, etc.), I optimized the pipeline's efficiency.
+**The What:** Reducing 135 variables down to 12 core audio and metadata features.
+**The Why:** In Big Data Engineering, processing unnecessary columns wastes memory and compute power. By isolating only the impactful columns (id, name, artists, popularity, etc.), I optimized the pipeline's efficiency.
 
 ### 4. Temporal Trend Aggregation (2012–2021)
-The What: Calculating the annual average for music "Vibe" metrics.
-The How: 
+**The What:** Calculating the annual average for music "Vibe" metrics.
+**The How:**
 
 `yearly_trends = df_selected.groupBy("year").avg("popularity", "danceability", "energy")
 yearly_trends.orderBy(col("year").desc()).show(10)`
 
-The Why: To identify the "Danceability Era." My analysis proved that modern music has become 13.5% more danceable over the last decade (rising from 0.59 to 0.67).
+**The Why:** To identify the "Danceability Era." My analysis proved that modern music has become 13.5% more danceable over the last decade (rising from 0.59 to 0.67).
 
 <img src="yearly_trends.png" alt="Yearly Trends Table" width="450"/>
 
 ### 5. Multi-Criteria Business Filtering
-The What: Isolating "Viral Potential" tracks using three distinct conditions.
-The How:
+**The What:** Isolating "Viral Potential" tracks using three distinct conditions.
+**The How:**
 
 `filtered_tracks = df_selected.filter(
     (col("year") >= 2000) & 
@@ -66,14 +66,14 @@ The How:
     (col("danceability") > 0.7)
 )`
 
-The Why: This mimics a real-world business request (e.g., a marketing team looking for the most "engaging" modern tracks). This identified 417 high-performance tracks, including hits by Eminem and Britney Spears.
+**The Why:** This mimics a real-world business request (e.g., a marketing team looking for the most "engaging" modern tracks). This identified 417 high-performance tracks, including hits by Eminem and Britney Spears.
 
 <img src="viral_tracks.png" alt="Viral Tracks Filtered" width="400"/>
 
 ## 📊 Data Persistence: The Final Output
 ### 6. CSV vs. Parquet (Optimized Storage)
-The What: Saving the results in both human-readable and machine-optimized formats.
-The Why:
+**The What:** Saving the results in both human-readable and machine-optimized formats.
+**The Why:**
 
 CSV: Used for quick reporting and sharing with non-technical stakeholders.
 
