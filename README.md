@@ -1,99 +1,133 @@
-# 🎵 Spotify Big Data Analysis: Engineering & Insights with PySpark
+# Spotify Big Data Analysis with PySpark
 
-**Tools:** Apache Spark 3.3.0, PySpark, Python, Google Colab | **Domain:** Data Engineering & Music Analytics
+A scalable data engineering and analysis pipeline built on Apache Spark to analyze over 600,000 Spotify tracks spanning a century of recorded music (1921-2020).
 
----
-
-## 📖 Table of Contents
-* [📌 Project Overview](#-project-overview)
-* [🏗️ System Architecture](#️-the-how--why-system-architecture)
-    * [1. Initializing the Spark Engine](#1-initializing-the-spark-engine)
-    * [2. Schema Governance & Ingestion](#2-schema-governance--ingestion)
-* [🛠️ Data Engineering & Transformation](#️-data-engineering--transformation)
-    * [3. Dimensionality Reduction](#3-dimensionality-reduction)
-    * [4. Temporal Trend Aggregation (2012–2021)](#4-temporal-trend-aggregation-20122021)
-    * [5. Multi-Criteria Business Filtering](#5-multi-criteria-business-filtering)
-* [📊 Data Persistence: The Final Output](#-data-persistence-the-final-output)
-    * [6. CSV vs. Parquet (Optimized Storage)](#6-csv-vs-parquet-optimized-storage)
-* [🌟 Professional Competencies](#-professional-competencies-demonstrated)
-* [👤 Author](#-author)
-
----
-## 📌 Project Overview
-This project executes a high-scale Exploratory Data Analysis (EDA) on the "Spotify Dataset 1921-2020," a massive corpus of over **600,000 tracks**. While traditional tools like Excel or Pandas struggle with datasets of this volume, I utilized the **Apache Spark DataFrame API** to build a scalable pipeline that uncovers music evolution trends across a century of records.
 
 ---
 
-## 🏗️ The "How" & "Why": System Architecture
+## Overview
 
-### 1. Initializing the Spark Engine
-**The What:** Starting a `SparkSession` in a Google Colab cloud environment.
-**The Why:** Spark is a distributed computing engine. By initializing a session, I am setting up the "brain" that allows for parallel processing, enabling the analysis of 600k rows in seconds rather than minutes.
+The dataset for this project has 600,000+ records. That is the point where Pandas starts to struggle - slow aggregations, memory warnings, and operations that take minutes instead of seconds. The decision to use Apache Spark was deliberate: this project was built to work the way production data pipelines work, not just to get the analysis done.
 
-### 2. Schema Governance & Ingestion
-**The What:** Loading the raw `tracks.csv` with `inferSchema=True`.
-**The How:** ```python
-df = spark.read.csv("tracks.csv", header=True, inferSchema=True)
-df.printSchema()
+Using the PySpark DataFrame API in Google Colab, I built a pipeline that handles ingestion, schema enforcement, dimensionality reduction, temporal aggregation, multi-criteria filtering, and optimized storage - all on a dataset that most classroom tools would choke on.
 
-**The Why:** Without a strict schema, Big Data becomes "dark data." I ensured that numeric metrics like popularity and energy were correctly typed to prevent errors during mathematical aggregations.
+---
 
-<img src="schema_tree.png" alt="Spark Schema Tree" width="250"/>
+## The Data
 
-## 🛠️ Data Engineering & Transformation
-### 3. Dimensionality Reduction
-**The What:** Reducing 135 variables down to 12 core audio and metadata features.
-**The Why:** In Big Data Engineering, processing unnecessary columns wastes memory and compute power. By isolating only the impactful columns (id, name, artists, popularity, etc.), I optimized the pipeline's efficiency.
+| | |
+|---|---|
+| Source | [Kaggle - Spotify Dataset 1921-2020](https://www.kaggle.com/datasets/lehaknarnauli/spotify-datasets) |
+| Records | 600,000+ tracks |
+| Time Span | 1921-2020 |
+| Features | 20 audio and metadata columns |
+| Environment | Apache Spark 3.3.0, PySpark, Google Colab |
 
-### 4. Temporal Trend Aggregation (2012–2021)
-**The What:** Calculating the annual average for music "Vibe" metrics.
-**The How:**
+---
 
-`yearly_trends = df_selected.groupBy("year").avg("popularity", "danceability", "energy")
-yearly_trends.orderBy(col("year").desc()).show(10)`
+## Pipeline Walkthrough
 
-**The Why:** To identify the "Danceability Era." My analysis proved that modern music has become 13.5% more danceable over the last decade (rising from 0.59 to 0.67).
+**Schema enforcement on ingestion.** The raw CSV was loaded with `inferSchema=True` and immediately validated with `printSchema()`. On a dataset this size, letting numeric columns like popularity or energy slip through as strings causes silent failures during aggregations. Catching type mismatches at ingestion is standard practice in production pipelines and I applied it here from the start.
 
-<img src="yearly_trends.png" alt="Yearly Trends Table" width="450"/>
+<p align="center">
+  <img src="schema_tree.png" width="300" alt="Spark schema tree showing inferred column types"/>
+</p>
 
-### 5. Multi-Criteria Business Filtering
-**The What:** Isolating "Viral Potential" tracks using three distinct conditions.
-**The How:**
+*The schema tree confirms correct typing across all 20 columns before any transformations are applied.*
 
-`filtered_tracks = df_selected.filter(
-    (col("year") >= 2000) & 
-    (col("popularity") >= 80) & 
+---
+
+**Dimensionality reduction.** The full dataset has 20 columns. For this analysis, I selected 12 core features - id, name, artists, popularity, year, danceability, energy, loudness, acousticness, instrumentalness, valence, and tempo. Dropping unused columns at this stage reduces memory overhead for every subsequent operation across 600k rows, which compounds meaningfully at this scale.
+
+---
+
+**Temporal trend aggregation (2012-2021).** I grouped by year and calculated annual averages for popularity, danceability, and energy to track how the character of popular music shifted over the decade.
+
+```python
+yearly_trends = df_selected.groupBy("year").avg("popularity", "danceability", "energy")
+yearly_trends.orderBy(col("year").desc()).show(10)
+```
+
+<p align="center">
+  <img src="yearly_trends.png" width="650" alt="Yearly trends table showing danceability and energy averages by year"/>
+</p>
+
+*Danceability rose from 0.59 to 0.67 between 2012 and 2021 - a 13.5% increase - while energy levels stayed relatively flat. Modern music has become measurably more danceable without becoming louder or more intense.*
+
+---
+
+**Multi-criteria filtering.** To simulate a real business request - identifying tracks with high engagement potential - I applied three simultaneous conditions: released after 2000, popularity score of 80 or above, and danceability above 0.7.
+
+```python
+filtered_tracks = df_selected.filter(
+    (col("year") >= 2000) &
+    (col("popularity") >= 80) &
     (col("danceability") > 0.7)
-)`
+)
+```
 
-**The Why:** This mimics a real-world business request (e.g., a marketing team looking for the most "engaging" modern tracks). This identified 417 high-performance tracks, including hits by Eminem and Britney Spears.
+<p align="center">
+  <img src="viral_tracks.png" width="550" alt="Filtered output showing 417 high-popularity high-danceability tracks"/>
+</p>
 
-<img src="viral_tracks.png" alt="Viral Tracks Filtered" width="400"/>
+*417 tracks met all three criteria. This kind of multi-condition filtering across 600k records runs in under a second with Spark - the same operation in Pandas on a dataset this size would be noticeably slower and more memory-intensive.*
 
-## 📊 Data Persistence: The Final Output
-### 6. CSV vs. Parquet (Optimized Storage)
-**The What:** Saving the results in both human-readable and machine-optimized formats.
-**The Why:**
+---
 
-CSV: Used for quick reporting and sharing with non-technical stakeholders.
+**Parquet storage for production output.** Results were saved in both CSV and Parquet formats. CSV is readable by anyone and easy to share. Parquet is a columnar storage format that provides roughly 3x better compression than CSV and significantly faster read performance for downstream queries in tools like Spark, Hive, or Athena.
 
-Parquet: Used for the production environment. Parquet is a columnar storage format that provides 3x better compression and faster query performance for Big Data tools.
+```python
+yearly_trends.write.mode("overwrite").parquet("yearly_trends.parquet")
+```
 
-`yearly_trends.write.mode("overwrite").parquet("yearly_trends.parquet")`
+<p align="center">
+  <img src="persistence_code.png" width="650" alt="Code showing CSV and Parquet write operations"/>
+</p>
 
-<img src="persistence_code.png" alt="Storage Formats" width="600"/>
+*Saving to both formats is a common pattern in data engineering - Parquet for the production pipeline, CSV for the stakeholder report.*
 
-## 📂 Repository Navigation
-Spotify Data Analysis Spark.ipynb: Full source code including setup, cleaning, and analysis.
+---
 
-README.md: Executive summary and technical walkthrough.
+## Key Findings
 
-## 🌟 Professional Competencies Demonstrated:
-Distributed Computing: Proficiency in Apache Spark and PySpark.
+Danceability in popular music increased 13.5% over the decade from 2012 to 2021, rising from an average of 0.59 to 0.67. Energy levels stayed flat over the same period, which suggests the shift toward more danceable music is driven by rhythm and structure rather than intensity or loudness. Of the 600,000 tracks in the dataset, 417 met the criteria for high popularity (80+) and high danceability (0.7+) released after 2000.
 
-Cloud Environments: Experience with Google Colab and cloud-based data tools.
+---
 
-Analytical Maturity: Ability to interpret data trends (e.g., the rise of danceability vs. stable energy levels).
+## Repository Structure
 
-## 👤 Author
-Tejashwini Saravanan [LinkedIn](https://www.linkedin.com/in/tejashwinisaravanan/)
+```
+Spotify-Big-Data-Analysis-Spark/
+│
+├── Spotify Data Analysis Spark.ipynb   # Full pipeline - ingestion, cleaning, analysis, storage
+├── schema_tree.png                     # Schema validation output
+├── yearly_trends.png                   # Temporal aggregation results
+├── viral_tracks.png                    # Filtered high-engagement tracks
+├── persistence_code.png                # CSV and Parquet write operations
+└── README.md
+```
+
+---
+
+## Limitations and What I Would Do Differently
+
+The analysis is limited to audio features already present in the dataset - there is no streaming data, no play count, and no listener demographic information. Popularity scores are a Spotify-calculated metric whose exact formula is not public, which means the filtering threshold of 80 is directionally useful but not precisely defined.
+
+If I were extending this project, I would connect to the Spotify API directly to pull live streaming data, add a machine learning layer to predict track popularity from audio features, and run the pipeline on a proper distributed cluster rather than a single Colab instance to demonstrate true horizontal scaling.
+
+---
+
+## Tools
+
+Apache Spark 3.3.0, PySpark, Python, Google Colab
+
+---
+
+## About Me
+
+**Tejashwini Saravanan** - Master's student in Data Analytics with a focus on scalable data pipelines and making complex data legible and actionable.
+
+[LinkedIn](https://www.linkedin.com/in/tejashwinisaravanan/) · [GitHub](https://github.com/TejashwiniSaravanan)
+
+---
+
